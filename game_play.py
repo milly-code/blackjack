@@ -61,7 +61,8 @@ class Blackjack:
                             break
                         player_move = get_player_move(
                             self.player.hand(0),
-                            self.dealer.show_card
+                            self.dealer.show_card,
+                            can_split=False
                         )
                         self.player.set_move(0, player_move)
                 elif self.player.last_move == PlayerMove.SPLIT:

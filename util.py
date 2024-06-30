@@ -45,7 +45,7 @@ def _get_hard_play(player_hand: Hand, dealer_card: PlayingCard) -> PlayerMove:
     if player_hand < 9:
         return PlayerMove.HIT
     elif player_hand == 9:
-        if dealer_card.value == 6:
+        if dealer_card.value == 6 and player_hand.can_double_down:
             return PlayerMove.DOUBLE
         # return PlayerMove.HIT
         if dealer_card.value in [2, 7, 8, 9, 10, 11] or not player_hand.can_double_down:
