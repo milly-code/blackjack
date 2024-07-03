@@ -39,6 +39,7 @@ def _get_soft_play(player_hand: Hand, dealer_card: PlayingCard) -> PlayerMove:
         if dealer_card.value in [5, 6]:
             return PlayerMove.DOUBLE if player_hand.can_double_down else PlayerMove.HIT
         return PlayerMove.HIT
+    return PlayerMove.HIT
 
 
 def _get_hard_play(player_hand: Hand, dealer_card: PlayingCard) -> PlayerMove:
@@ -131,14 +132,19 @@ def print_table(results: dict, game_total: int):
 
     if USE_PRETTY_TABLE:
         table.add_rows(table_data)
-        print(table)
+        with open('table.txt', 'w+') as logger:
+            logger.write(str(table))
+        # print(table)
     else:
         table_data = [headers] + table_data
         col_widths = [max(len(str(item)) for item in col) for col in zip(*table_data)]
-        for row in table_data:
-            print(" | ".join(f"{str(item):<{col_widths[i]}}" for i, item in enumerate(row)))
-            if row == headers:
-                print("-+-".join('-' * col_width for col_width in col_widths))
+        with open('table.txt', 'a+') as logger:
+            for row in table_data:
+                logger.write(" | ".join(f"{str(item):<{col_widths[i]}}" for i, item in enumerate(row)))
+                logger.write("\n")
+                if row == headers:
+                    logger.write("-+-".join('-' * col_width for col_width in col_widths))
+                    logger.write("\n")
 
 
 __all__ = ["get_player_move", "print_table"]
