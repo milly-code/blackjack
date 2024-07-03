@@ -19,7 +19,7 @@ class Blackjack:
     def log(message: str, color: str = Colors.BLUE):
         if INTERACTIVE:
             print(f"{color}{message}")
-            with open("./log.txt", "a+") as logger:
+            with open("./log.txt", "a+", encoding="utf-8") as logger:
                 logger.write(message)
                 logger.write("\n")
 
