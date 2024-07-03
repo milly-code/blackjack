@@ -130,7 +130,8 @@ class Hand:
 
     @property
     def real_value(self) -> int:
-        return sum(card.value for card in self.cards)
+        raise Exception("func `real_value` is no longer valid")
+        # return sum(card.value for card in self.cards)
 
     @property
     def can_double_down(self):
@@ -317,20 +318,9 @@ class Dealer(object):
 
     def deal(self, player: Optional[Player] = None, player_hand_id=0) -> Optional[Player]:
         if player:
-            if player_hand_id == 0:
-                player.add_card(PlayingCard('3', Hearts), player_hand_id)
-            else:
-                player.add_card(PlayingCard('9', Hearts), player_hand_id)
-            # player.add_card(PlayingCard('Q', Diamonds))
-            # player.add_card(self.deck.deal(), player_hand_id)
+            player.add_card(self.deck.deal(), player_hand_id)
             return player
-        if len(self.hand.cards) == 2:
-            self.add_card(PlayingCard('2', Hearts))
-        elif len(self.hand.cards) == 3:
-            self.add_card(PlayingCard('3', Hearts))
-        else:
-            self.add_card(PlayingCard('J', Spades))
-        # self.add_card(self.deck.deal())
+        self.add_card(self.deck.deal())
         return None
 
     def reset(self):
@@ -338,18 +328,10 @@ class Dealer(object):
         return self
 
     def start_new_game(self, player: Player):
-        self.reset().add_card(PlayingCard('2', Spades))
-
-        player.reset().add_card(PlayingCard('A', Hearts))
-
-        self.add_card(PlayingCard('7', Hearts))
-
-        player.add_card(PlayingCard('A', Clubs))
-
-        # self.reset().add_card(self.deck.deal())
-        # player.reset().add_card(self.deck.deal())
-        # self.add_card(self.deck.deal())
-        # player.add_card(self.deck.deal())
+        self.reset().add_card(self.deck.deal())
+        player.reset().add_card(self.deck.deal())
+        self.add_card(self.deck.deal())
+        player.add_card(self.deck.deal())
 
     def __str__(self):
         return f"<Dealer: {self._id} | {self.hand}/>"

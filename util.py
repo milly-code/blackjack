@@ -102,7 +102,7 @@ def _get_pairs_play(player_hand: Hand, dealer_card: PlayingCard) -> PlayerMove:
 def get_player_move(player_hand: Hand, dealer_card: PlayingCard, can_split=False) -> PlayerMove:
     if player_hand.has_pairs and can_split:
         return _get_pairs_play(player_hand, dealer_card)
-    elif player_hand.has_ace and player_hand.real_value < 21:
+    elif player_hand.has_ace and player_hand.total < 21:
         return _get_soft_play(player_hand, dealer_card)
     return _get_hard_play(player_hand, dealer_card)
 

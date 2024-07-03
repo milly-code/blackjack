@@ -19,9 +19,9 @@ class Blackjack:
     def log(message: str, color: str = Colors.BLUE):
         if INTERACTIVE:
             print(f"{color}{message}")
-            with open("./log.txt", "a+") as log:
-                log.write(message)
-                log.write("\n")
+            with open("./log.txt", "a+") as logger:
+                logger.write(message)
+                logger.write("\n")
 
     def run(self):
         while self.game < MAX_GAMES:
@@ -73,7 +73,7 @@ class Blackjack:
             self.resolve_game()
             self.log("----------------------------------------")
             if INTERACTIVE:
-                input("Press Enter to continue... >>> ")
+                # input("Press Enter to continue... >>> ")
                 if os.name == 'nt':
                     os.system('cls')
                 else:
