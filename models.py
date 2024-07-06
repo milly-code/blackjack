@@ -83,9 +83,10 @@ class PlayingCardDeck:
 
 
 class Hand:
-    def __init__(self, cards: Optional[List[PlayingCard]] = None):
+    def __init__(self, cards: Optional[List[PlayingCard]] = None, is_dealer=True):
         self.cards: List[PlayingCard] = cards or []  # cards
         self.moves: List[PlayerMove] = []
+        self.is_dealer = is_dealer
 
     def add_cards(self, cards: List[PlayingCard]):
         self.cards.extend(cards)
@@ -197,7 +198,21 @@ class Hand:
         return False
 
     def __repr__(self):
-        return f"<Hand: {self.cards} | total: {self.total}/>"
+        if self.is_dealer:
+            return f"<Hand: {self.cards} | total: {self.total}/>"
+        v = 'soft-hand' if self.has_usable_ace() else 'hard-hand'
+        return f"<Hand: {self.cards} | total: {self.total}/ | {v}>"
+
+    def has_usable_ace(self):
+        if not self.has_ace:
+            # if no ace in hand then no usable ace
+            return False
+        total = sum(card.value for card in self.cards)
+        num_aces = sum(1 for card in self.cards if card.name == 'A')
+        while total > 21 and num_aces:
+            total -= 10
+            num_aces -= 1
+        return num_aces > 0
 
     def __str__(self):
         return self.__repr__()
@@ -232,7 +247,7 @@ class Player:
         return self
 
     def reset(self) -> 'Player':
-        self.hands = [Hand()]
+        self.hands = [Hand(is_dealer=False)]
         return self
 
     @property
@@ -324,7 +339,7 @@ class Dealer(object):
         return None
 
     def reset(self):
-        self.hand = Hand()
+        self.hand = Hand(is_dealer=True)
         return self
 
     def start_new_game(self, player: Player):

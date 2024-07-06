@@ -18,7 +18,6 @@ def _get_soft_play(player_hand: Hand, dealer_card: PlayingCard) -> PlayerMove:
         if dealer_card.value != 6 or not player_hand.can_double_down:
             return PlayerMove.STAY
         return PlayerMove.DOUBLE
-        # return PlayerMove.STAY
     elif player_hand == 18:
         if dealer_card.value in [7, 8] or (not player_hand.can_double_down and dealer_card.value <= 6):
             return PlayerMove.STAY
@@ -39,7 +38,7 @@ def _get_soft_play(player_hand: Hand, dealer_card: PlayingCard) -> PlayerMove:
         if dealer_card.value in [5, 6]:
             return PlayerMove.DOUBLE if player_hand.can_double_down else PlayerMove.HIT
         return PlayerMove.HIT
-    return PlayerMove.HIT
+    return PlayerMove.STAY
 
 
 def _get_hard_play(player_hand: Hand, dealer_card: PlayingCard) -> PlayerMove:
@@ -48,19 +47,16 @@ def _get_hard_play(player_hand: Hand, dealer_card: PlayingCard) -> PlayerMove:
     elif player_hand == 9:
         if dealer_card.value == 6 and player_hand.can_double_down:
             return PlayerMove.DOUBLE
-        # return PlayerMove.HIT
         if dealer_card.value in [2, 7, 8, 9, 10, 11] or not player_hand.can_double_down:
             return PlayerMove.HIT
         return PlayerMove.DOUBLE
     elif player_hand == 10:
-        # return PlayerMove.HIT
         if dealer_card.value in [10, 11] or not player_hand.can_double_down:
             return PlayerMove.HIT
-        return PlayerMove.DOUBLE
+        return PlayerMove.DOUBLE if player_hand.can_double_down else PlayerMove.HIT
     elif player_hand == 11:
         if dealer_card.value == 5:
             return PlayerMove.DOUBLE
-        # return PlayerMove.HIT
         return PlayerMove.DOUBLE if player_hand.can_double_down else PlayerMove.HIT
     elif player_hand == 12:
         return PlayerMove.STAY if dealer_card.value in [4, 5, 6] else PlayerMove.HIT
@@ -77,24 +73,18 @@ def _get_pairs_play(player_hand: Hand, dealer_card: PlayingCard) -> PlayerMove:
     if player_hand.has_ace:  # Player has a pair of aces
         return PlayerMove.SPLIT
     if player_hand.total in [4, 6, 7, 14]:
-        # return PlayerMove.HIT
         return PlayerMove.SPLIT if dealer_card.value < 8 else PlayerMove.HIT
     elif player_hand == 8:
-        # return PlayerMove.HIT
         return PlayerMove.SPLIT if dealer_card.value in [5, 6] else PlayerMove.HIT
     elif player_hand == 10:
-        # return PlayerMove.HIT
         return PlayerMove.DOUBLE if dealer_card.value < 10 else PlayerMove.HIT
     elif player_hand == 12:
-        # return PlayerMove.HIT
         return PlayerMove.SPLIT if dealer_card.value < 7 else PlayerMove.HIT
     elif player_hand == 18:
-        # return PlayerMove.STAY
         return PlayerMove.STAY if dealer_card.value in [7, 10, 11] else PlayerMove.SPLIT
     elif player_hand == 20:
         return PlayerMove.STAY
     elif player_hand == 16:
-        # return PlayerMove.HIT
         return PlayerMove.SPLIT
 
     raise ValueError(f"Player hand total: {player_hand.total}")
@@ -103,7 +93,7 @@ def _get_pairs_play(player_hand: Hand, dealer_card: PlayingCard) -> PlayerMove:
 def get_player_move(player_hand: Hand, dealer_card: PlayingCard, can_split=False) -> PlayerMove:
     if player_hand.has_pairs and can_split:
         return _get_pairs_play(player_hand, dealer_card)
-    elif player_hand.has_ace and player_hand.total < 21:
+    elif player_hand.has_ace and player_hand.total < 21 and player_hand.has_usable_ace():
         return _get_soft_play(player_hand, dealer_card)
     return _get_hard_play(player_hand, dealer_card)
 
