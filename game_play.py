@@ -1,4 +1,5 @@
 import os
+import math
 from models import Player, Dealer, PlayerMove, Hand
 from config import INTERACTIVE, Colors, MAX_GAMES, EXPORT_FILE
 
@@ -14,6 +15,8 @@ class Blackjack:
         self.dealer = Dealer()
         self.game = 0
         self.results = {}
+        self.hands_played = 0
+        self.running_count = 0
 
     @staticmethod
     def log(message: str, color: str = Colors.BLUE):
@@ -26,14 +29,18 @@ class Blackjack:
     def run(self):
         while self.game < MAX_GAMES:
             self.__play()
+            self.running_count = 0
+            self.hands_played = 0
             self.dealer.shuffle()
         print_table(self.results, self.game)
 
     def __play(self):
         while not self.dealer.deck.should_create_new_deck():
             self.game += 1
-            self.dealer.start_new_game(self.player)
+            self.running_count += self.dealer.start_new_game(self.player)
+            self.hands_played += 2  # 2 hands played each time a new game starts
             if self.player.hand(0).has_ace and self.player.hand(0).has_pairs:
+                self.hands_played += 1
                 self.handle_ace_split()
             elif self.player.blackjack or self.dealer.blackjack:
                 self.log("Blackjack! - Someone has a blackjack")
@@ -44,33 +51,41 @@ class Blackjack:
                 self.player.set_move(0, PlayerMove.SURRENDER)
             else:
                 player_move = get_player_move(
-                    self.player.hand(0),
-                    self.dealer.show_card,
+                    player_hand=self.player.hand(0),
+                    dealer_card=self.dealer.show_card,
+                    true_count=self.get_true_count(),
                     can_split=True
                 )
                 self.player.set_move(0, player_move)
                 if self.player.last_move == PlayerMove.DOUBLE:
                     self.log("Double Down - Player receives maximum 1 card")
-                    self.dealer.deal(self.player, 0)
+                    self.running_count += self.dealer.deal(self.player, 0)
                 elif self.player.last_move == PlayerMove.HIT:
                     while self.player.last_move == PlayerMove.HIT:
                         self.log("Hit - Player receives another card")
-                        self.dealer.deal(self.player, 0)
+                        self.running_count += self.dealer.deal(self.player, 0)
                         if self.player.charlie(0):
                             self.log("Player has a charlie - player wins")
                             break
                         player_move = get_player_move(
-                            self.player.hand(0),
-                            self.dealer.show_card,
+                            player_hand=self.player.hand(0),
+                            dealer_card=self.dealer.show_card,
+                            true_count=self.get_true_count(),
                             can_split=False
                         )
                         self.player.set_move(0, player_move)
                 elif self.player.last_move == PlayerMove.SPLIT:
+                    self.hands_played += 1
                     self.log("Split - Player hand splits")
                     self.handle_player_split()
 
             self.log("----------------------------------------")
             self.resolve_game()
+            self.log("----------------------------------------")
+            self.log(f"Running Count {self.running_count}")
+            self.log(f"Hands Played {self.hands_played}")
+            self.log(f"True Count {self.get_true_count()}")
+            self.log(f"Deck {math.ceil(len(self.dealer.deck.cards) / 52)}")
             self.log("----------------------------------------")
             if INTERACTIVE:
                 # input("Press Enter to continue... >>> ")
@@ -79,13 +94,20 @@ class Blackjack:
                 else:
                     os.system('clear')
 
+    def get_true_count(self):
+        num_decks_remaining = math.ceil(len(self.dealer.deck.cards) / 52)
+        if num_decks_remaining == 0 or self.game == 1:
+            return 0
+        return self.running_count / num_decks_remaining
+
     def handle_player_split(self):
         for hand_id in range(len(self.player.hands)):
-            self.dealer.deal(self.player, hand_id)
+            self.running_count += self.dealer.deal(self.player, hand_id)
             while True:
                 player_move = get_player_move(
-                    self.player.hand(hand_id),
-                    self.dealer.show_card,
+                    player_hand=self.player.hand(hand_id),
+                    dealer_card=self.dealer.show_card,
+                    true_count=self.get_true_count()
                 )
                 self.log(f"Player hand {player_move.name.lower()} split")
                 self.player.set_move(hand_id, player_move)
@@ -98,7 +120,7 @@ class Blackjack:
                     )
                     break
 
-                self.dealer.deal(self.player, hand_id)
+                self.running_count += self.dealer.deal(self.player, hand_id)
                 if player_move == PlayerMove.DOUBLE:
                     self.log("Double Down - Player receives maximum 1 card")
                     break
@@ -118,8 +140,8 @@ class Blackjack:
         self.log("Ace split")
         self.player.set_move(0, PlayerMove.SPLIT)
         self.player.split()
-        self.dealer.deal(self.player, 0)
-        self.dealer.deal(self.player, 1)
+        self.running_count += self.dealer.deal(self.player, 0)
+        self.running_count += self.dealer.deal(self.player, 1)
 
     def is_player_busted(self):
         for hand in self.player.hands:
@@ -145,7 +167,7 @@ class Blackjack:
         if dealer_take_cards:
             while self.dealer.hand_total < 17:
                 self.log("Taking cards for dealer")
-                self.dealer.deal()
+                self.running_count += self.dealer.deal()
 
     def update_results(self, key: str):
         if not INTERACTIVE:

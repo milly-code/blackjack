@@ -7,9 +7,10 @@ import warnings
 
 
 class PlayingCard:
-    def __init__(self, name: str, suit: str):
+    def __init__(self, name: str, suit: str, count: int = 0):
         self.name = name
         self.suit = suit
+        self.count = count
         self.value = self._determine_value()
 
     def _determine_value(self) -> int:
@@ -21,7 +22,7 @@ class PlayingCard:
             return int(self.name)
 
     def __repr__(self) -> str:
-        return f'PlayingCard({self.name} of {self.suit})'
+        return f'PlayingCard({self.name} of {self.suit}) | count {self.count}'
 
     def __str__(self):
         return self.__repr__()
@@ -64,9 +65,10 @@ class PlayingCardDeck:
         self.shuffle()
 
     def create_card_pack(self):
-        for face in card_values:
+        for data in card_values:
+            face, count = data
             for suit in SUITS:
-                self.cards.append(PlayingCard(face, suit))
+                self.cards.append(PlayingCard(face, suit, count=count))
 
     def shuffle(self):
         self.cards = []
@@ -331,22 +333,29 @@ class Dealer(object):
     def deck(self, value):
         raise ValueError("Cannot set deck: " + str(value))
 
-    def deal(self, player: Optional[Player] = None, player_hand_id=0) -> Optional[Player]:
+    def deal(self, player: Optional[Player] = None, player_hand_id=0) -> int:
+        card = self.deck.deal()
         if player:
-            player.add_card(self.deck.deal(), player_hand_id)
-            return player
-        self.add_card(self.deck.deal())
-        return None
+            player.add_card(card, player_hand_id)
+        else:
+            self.add_card(self.deck.deal())
+        return card.count
 
     def reset(self):
         self.hand = Hand(is_dealer=True)
         return self
 
-    def start_new_game(self, player: Player):
-        self.reset().add_card(self.deck.deal())
-        player.reset().add_card(self.deck.deal())
-        self.add_card(self.deck.deal())
-        player.add_card(self.deck.deal())
+    def start_new_game(self, player: Player) -> int:
+        player.reset()
+        self.reset()
+
+        count = (
+            self.deal()
+            + self.deal(player, 0)
+            + self.deal()
+            + self.deal(player, 0)
+        )
+        return count
 
     def __str__(self):
         return f"<Dealer: {self._id} | {self.hand}/>"

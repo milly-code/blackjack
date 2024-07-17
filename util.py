@@ -1,6 +1,6 @@
 from enums import PlayerMove
 from models import Hand, PlayingCard
-from typing import Union, List
+from typing import Union, List, Optional
 
 USE_PRETTY_TABLE = True
 
@@ -90,12 +90,62 @@ def _get_pairs_play(player_hand: Hand, dealer_card: PlayingCard) -> PlayerMove:
     raise ValueError(f"Player hand total: {player_hand.total}")
 
 
-def get_player_move(player_hand: Hand, dealer_card: PlayingCard, can_split=False) -> PlayerMove:
-    if player_hand.has_pairs and can_split:
-        return _get_pairs_play(player_hand, dealer_card)
-    elif player_hand.has_ace and player_hand.total < 21 and player_hand.has_usable_ace():
-        return _get_soft_play(player_hand, dealer_card)
-    return _get_hard_play(player_hand, dealer_card)
+def _get_true_count_play(player_hand: Hand, dealer_card: PlayingCard, true_count: float, ) -> Optional[PlayerMove]:
+    if true_count == 0:
+        return None
+    if player_hand.total == 16 and dealer_card.value == 9 and true_count >= 8:
+        return PlayerMove.STAY
+    elif (player_hand.total == 20 and player_hand.has_pairs
+          and (dealer_card.value == 5 or dealer_card.value == 6) and true_count >= 8):
+        return PlayerMove.SPLIT
+    elif player_hand.total == 9 and dealer_card.value == 7 and true_count >= 7:
+        return PlayerMove.STAY
+    elif player_hand.total == 12 and dealer_card.value == 2 and true_count >= 7:
+        return PlayerMove.STAY
+    elif player_hand.total == 15 and dealer_card.value == 10 and true_count >= 6:
+        return PlayerMove.STAY
+    elif player_hand.total == 10 and dealer_card.value == 10 and true_count >= 5:
+        return PlayerMove.DOUBLE
+    elif player_hand.total == 12 and dealer_card.value == 3 and true_count >= 5:
+        return PlayerMove.STAY
+    elif player_hand.total == 10 and dealer_card.value == 11 and true_count >= 4:
+        return PlayerMove.DOUBLE
+    elif player_hand.total == 8 and dealer_card.value == 6 and true_count >= 3:
+        return PlayerMove.DOUBLE
+    elif player_hand.total == 19 and player_hand.has_usable_ace() and dealer_card.value == 6 and true_count >= 3:
+        return PlayerMove.DOUBLE
+    elif player_hand.total == 9 and dealer_card.value == 2 and true_count >= 1:
+        return PlayerMove.DOUBLE
+    elif player_hand.total == 14 and dealer_card.value == 2 and true_count >= 1:
+        return PlayerMove.STAY
+    elif player_hand.total == 13 and dealer_card.value == 2 and true_count <= -1:
+        return PlayerMove.HIT
+    elif player_hand.total == 16 and dealer_card.value == 10 and true_count <= -1:
+        return PlayerMove.HIT
+    elif player_hand.total == 12 and dealer_card.value == 5 and true_count <= -2:
+        return PlayerMove.HIT
+    elif player_hand.total == 13 and dealer_card.value == 3 and true_count <= -2:
+        return PlayerMove.HIT
+    elif player_hand.total == 12 and dealer_card.value == 6 and true_count <= -4:
+        return PlayerMove.HIT
+    elif player_hand.total == 11 and dealer_card.value == 11 and true_count <= -4:
+        return PlayerMove.HIT
+    return None
+
+
+def get_player_move(player_hand: Hand, dealer_card: PlayingCard, true_count: float, can_split=False) -> PlayerMove:
+    move = _get_true_count_play(player_hand, dealer_card, true_count)
+
+    if move and move.value == PlayerMove.SPLIT.value and not can_split:
+        move = None
+
+    if move is None:
+        if player_hand.has_pairs and can_split:
+            return _get_pairs_play(player_hand, dealer_card)
+        elif player_hand.has_ace and player_hand.total < 21 and player_hand.has_usable_ace():
+            return _get_soft_play(player_hand, dealer_card)
+        return _get_hard_play(player_hand, dealer_card)
+    return move
 
 
 def bd_nice_number(num: int, decimals: int = 1):
