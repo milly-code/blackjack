@@ -37,7 +37,7 @@ class Blackjack:
     def __play(self):
         while not self.dealer.deck.should_create_new_deck():
             self.game += 1
-            self.running_count += self.dealer.start_new_game(self.player)
+            self.dealer.start_new_game(self.player)
             self.hands_played += 2  # 2 hands played each time a new game starts
             if self.player.hand(0).has_ace and self.player.hand(0).has_pairs:
                 self.hands_played += 1
@@ -59,11 +59,11 @@ class Blackjack:
                 self.player.set_move(0, player_move)
                 if self.player.last_move == PlayerMove.DOUBLE:
                     self.log("Double Down - Player receives maximum 1 card")
-                    self.running_count += self.dealer.deal(self.player, 0)
+                    self.dealer.deal(self.player, 0)
                 elif self.player.last_move == PlayerMove.HIT:
                     while self.player.last_move == PlayerMove.HIT:
                         self.log("Hit - Player receives another card")
-                        self.running_count += self.dealer.deal(self.player, 0)
+                        self.dealer.deal(self.player, 0)
                         if self.player.charlie(0):
                             self.log("Player has a charlie - player wins")
                             break
@@ -79,9 +79,11 @@ class Blackjack:
                     self.log("Split - Player hand splits")
                     self.handle_player_split()
 
+            previous_count = self.running_count
             self.log("----------------------------------------")
-            self.resolve_game()
+            self.running_count = self.running_count + self.resolve_game()
             self.log("----------------------------------------")
+            self.log(f"Previous Count {previous_count}")
             self.log(f"Running Count {self.running_count}")
             self.log(f"Hands Played {self.hands_played}")
             self.log(f"True Count {self.get_true_count()}")
@@ -102,7 +104,7 @@ class Blackjack:
 
     def handle_player_split(self):
         for hand_id in range(len(self.player.hands)):
-            self.running_count += self.dealer.deal(self.player, hand_id)
+            self.dealer.deal(self.player, hand_id)
             while True:
                 player_move = get_player_move(
                     player_hand=self.player.hand(hand_id),
@@ -120,7 +122,7 @@ class Blackjack:
                     )
                     break
 
-                self.running_count += self.dealer.deal(self.player, hand_id)
+                self.dealer.deal(self.player, hand_id)
                 if player_move == PlayerMove.DOUBLE:
                     self.log("Double Down - Player receives maximum 1 card")
                     break
@@ -140,8 +142,8 @@ class Blackjack:
         self.log("Ace split")
         self.player.set_move(0, PlayerMove.SPLIT)
         self.player.split()
-        self.running_count += self.dealer.deal(self.player, 0)
-        self.running_count += self.dealer.deal(self.player, 1)
+        self.dealer.deal(self.player, 0)
+        self.dealer.deal(self.player, 1)
 
     def is_player_busted(self):
         for hand in self.player.hands:
@@ -167,7 +169,7 @@ class Blackjack:
         if dealer_take_cards:
             while self.dealer.hand_total < 17:
                 self.log("Taking cards for dealer")
-                self.running_count += self.dealer.deal()
+                self.dealer.deal()
 
     def update_results(self, key: str):
         if not INTERACTIVE:
@@ -202,11 +204,15 @@ class Blackjack:
                 return 1
 
     def resolve_game(self):
+        card_count = 0
+
         self.dealer_move()
         self.log(f"Dealer Hand: \n\t {self.dealer.hand}")
+        card_count = card_count + sum([card.count for card in self.dealer.hand.cards])
         self.log("Player hands: ")
         for hand in self.player.hands:
             self.log(f"\t {hand}")
+            card_count = card_count + sum([card.count for card in hand.cards])
 
         if self.player.blackjack or self.dealer.blackjack:
             if self.player.blackjack and self.dealer.blackjack:
@@ -296,6 +302,8 @@ class Blackjack:
                     (Colors.WARNING if point == 0 else Colors.GREEN)
                 )
                 self.update_results(str(point))
+
+        return card_count
 
 
 if __name__ == '__main__':

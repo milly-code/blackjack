@@ -22,7 +22,7 @@ class PlayingCard:
             return int(self.name)
 
     def __repr__(self) -> str:
-        return f'PlayingCard({self.name} of {self.suit}) | count {self.count}'
+        return f'PlayingCard(value={self.name}, suite={self.suit}, count={self.count})'
 
     def __str__(self):
         return self.__repr__()
@@ -200,10 +200,11 @@ class Hand:
         return False
 
     def __repr__(self):
+        card_sum = sum([card.count for card in self.cards])
         if self.is_dealer:
-            return f"<Hand: {self.cards} | total: {self.total}/>"
+            return f"<Hand(cards={self.cards}, total={self.total}, count={card_sum})/>"
         v = 'soft-hand' if self.has_usable_ace() else 'hard-hand'
-        return f"<Hand: {self.cards} | total: {self.total}/ | {v}>"
+        return f"<Hand(cards={self.cards}, total={self.total}, type={v}, count={card_sum}) />"
 
     def has_usable_ace(self):
         if not self.has_ace:
