@@ -3,7 +3,7 @@ import math
 from models import Player, Dealer, PlayerMove, Hand
 from config import INTERACTIVE, Colors, MAX_GAMES, EXPORT_FILE
 
-from util import get_player_move, print_table
+from util import get_player_move, print_table, get_hand_value
 
 if INTERACTIVE:
     MAX_GAMES = 20
@@ -39,12 +39,17 @@ class Blackjack:
             self.game += 1
             self.dealer.start_new_game(self.player)
             self.hands_played += 2  # 2 hands played each time a new game starts
+
+            if self.dealer.show_card.name == 'A' and self.get_true_count() >= 5:
+                # if the dealer has an Ace then the player should take insurance
+                self.player.has_insurance = True
+
             if self.player.hand(0).has_ace and self.player.hand(0).has_pairs:
                 self.hands_played += 1
                 self.handle_ace_split()
             elif self.player.blackjack or self.dealer.blackjack:
                 self.log("Blackjack! - Someone has a blackjack")
-                self.player.set_move(0, PlayerMove.STAY)
+                self.player.set_move(0, PlayerMove.STAND)
             # !Checking if player surrendered
             elif self.player_surrendered():
                 self.log("Surrender - Player loses 0.5 points")
@@ -87,7 +92,7 @@ class Blackjack:
             self.log(f"Running Count {self.running_count}")
             self.log(f"Hands Played {self.hands_played}")
             self.log(f"True Count {self.get_true_count()}")
-            self.log(f"Deck {math.ceil(len(self.dealer.deck.cards) / 52)}")
+            self.log(f"Deck {get_hand_value(self.hands_played)}")
             self.log("----------------------------------------")
             if INTERACTIVE:
                 # input("Press Enter to continue... >>> ")
@@ -114,7 +119,7 @@ class Blackjack:
                 self.log(f"Player hand {player_move.name.lower()} split")
                 self.player.set_move(hand_id, player_move)
 
-                if player_move in (PlayerMove.STAY, PlayerMove.SURRENDER):
+                if player_move in (PlayerMove.STAND, PlayerMove.SURRENDER):
                     self.log(
                         "Surrender - Player loses 0.5 points"
                         if player_move == PlayerMove.SURRENDER
@@ -216,14 +221,26 @@ class Blackjack:
 
         if self.player.blackjack or self.dealer.blackjack:
             if self.player.blackjack and self.dealer.blackjack:
-                self.log("Push - Player Points = 0", Colors.WARNING)
-                self.update_results("0")
+                if self.player.has_insurance:
+                    self.log("Insurance Push - Player  Points = -0.5", Colors.WARNING)
+                    self.update_results("-0.5")
+                else:
+                    self.log("Push - Player Points = 0", Colors.WARNING)
+                    self.update_results("0")
             elif self.dealer.blackjack:
-                self.log("Dealer wins - Player Points = -1", Colors.FAIL)
-                self.update_results("-1")
+                if self.player.has_insurance:
+                    self.log("Dealer wins - Player Points = -1.5", Colors.FAIL)
+                    self.update_results("-1.5")
+                else:
+                    self.log("Dealer wins - Player Points = -1", Colors.FAIL)
+                    self.update_results("-1")
             else:
-                self.log("Player wins - Player Points = +1.5", Colors.GREEN)
-                self.update_results("1.5")
+                if self.player.has_insurance:
+                    self.log("Player wins - Player Points = +0.5", Colors.GREEN)
+                    self.update_results("0.5")
+                else:
+                    self.log("Player wins - Player Points = +1.5", Colors.GREEN)
+                    self.update_results("1.5")
         elif len(self.player.hands) == 1:
             hand = self.player.hand(0)
 
@@ -316,4 +333,5 @@ if __name__ == '__main__':
             print(" ")
     except KeyboardInterrupt:
         print("Exiting...")
+        input(">>> ")
         exit()

@@ -229,6 +229,7 @@ class Player:
         self._id = "player_" + ''.join(choices(string.ascii_lowercase + string.digits, k=15))
         self.hands: List[Hand] = [Hand()]
         self.name = name
+        self.has_insurance = False
 
     def set_move(self, hand_id: int, move: PlayerMove) -> 'Player':
         self.hand(hand_id).moves.append(move)
@@ -250,6 +251,7 @@ class Player:
         return self
 
     def reset(self) -> 'Player':
+        self.has_insurance = False
         self.hands = [Hand(is_dealer=False)]
         return self
 
