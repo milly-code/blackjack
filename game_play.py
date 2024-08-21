@@ -1,5 +1,4 @@
 import os
-import math
 from models import Player, Dealer, PlayerMove, Hand
 from config import INTERACTIVE, Colors, MAX_GAMES, EXPORT_FILE
 
@@ -102,7 +101,7 @@ class Blackjack:
                     os.system('clear')
 
     def get_true_count(self):
-        num_decks_remaining = math.ceil(len(self.dealer.deck.cards) / 52)
+        num_decks_remaining = get_hand_value(self.hands_played)
         if num_decks_remaining == 0 or self.game == 1:
             return 0
         return self.running_count / num_decks_remaining

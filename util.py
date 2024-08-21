@@ -104,63 +104,102 @@ def _get_pairs_play(player_hand: Hand, dealer_card: PlayingCard) -> PlayerMove:
     raise ValueError(f"Player hand total: {player_hand.total}")
 
 
-def _get_true_count_play(player_hand: Hand, dealer_card: PlayingCard, true_count: float) -> Optional[PlayerMove]:
-    if 0 <= true_count < 1:
-        # use the regular plays
-        return None
-    if true_count >= 8:
-        if player_hand.total == 16:
-            return PlayerMove.STAND if dealer_card.value == 9 else PlayerMove.HIT
-        elif player_hand.has_pairs and player_hand.total == 20:
-            return PlayerMove.SPLIT if dealer_card.value == 5 else PlayerMove.STAND
+def _get_true_count_play(player_hand: Hand, dealer_card: PlayingCard, true_count: float) -> PlayerMove:
+    hand_value = player_hand.total
+    is_soft = player_hand.has_ace and player_hand.total < 21 and player_hand.has_usable_ace()
 
-    elif true_count >= 7:
-        if player_hand.total == 9:
-            return PlayerMove.DOUBLE if (player_hand.can_double_down and dealer_card.value == 7) else PlayerMove.HIT
-        elif player_hand.total == 12:
-            return PlayerMove.STAND if dealer_card.value == 2 else PlayerMove.HIT
-    elif true_count >= 6:
-        if player_hand.has_pairs and player_hand.total == 20:
-            return PlayerMove.SPLIT if dealer_card.value == 6 else PlayerMove.STAND
-        elif player_hand.total == 15:
-            return PlayerMove.STAND if dealer_card.value == 10 else PlayerMove.HIT
-    elif true_count >= 5:
-        if dealer_card.name == 'A':
-            raise InsuranceException("Take insurance")
-        elif player_hand.total == 10:
-            return PlayerMove.DOUBLE if dealer_card.value == 10 else PlayerMove.HIT
-        elif player_hand.total == 12:
-            return PlayerMove.STAND if dealer_card.value == 3 else PlayerMove.HIT
+    if true_count >= 8 and hand_value == 16 and dealer_card == 9:
+        return PlayerMove.STAND
+    elif true_count < 8 and hand_value == 16 and dealer_card == 9:
+        return PlayerMove.HIT
 
-    elif true_count >= 4 and player_hand.total == 10:
-        return PlayerMove.DOUBLE if dealer_card.name == 'A' else PlayerMove.HIT
-    elif true_count >= 3:
-        if player_hand.has_ace and player_hand.total == 19 and player_hand.has_usable_ace():
-            # soft 19
-            return PlayerMove.DOUBLE if (player_hand.can_double_down and dealer_card.value == 6) else PlayerMove.STAND
-        elif player_hand.total == 8:
-            return PlayerMove.DOUBLE if (player_hand.can_double_down and dealer_card.value == 6) else PlayerMove.HIT
-    elif true_count >= 1:
-        if player_hand.total == 9:
-            return PlayerMove.DOUBLE if (player_hand.can_double_down and dealer_card.value == 2) else PlayerMove.HIT
-        elif player_hand.total == 12:
-            return PlayerMove.STAND if dealer_card.value == 4 else PlayerMove.HIT
-    elif true_count <= -4:
-        if player_hand.total == 12:
-            return PlayerMove.HIT if dealer_card.value == 6 else PlayerMove.STAND
-        elif player_hand.total == 11:
-            return PlayerMove.HIT if dealer_card.value == 11 else PlayerMove.DOUBLE
-    elif true_count <= -2:
-        if player_hand.total == 12:
-            return PlayerMove.HIT if dealer_card.value == 5 else PlayerMove.STAND
-        elif player_hand.total == 13:
-            return PlayerMove.HIT if dealer_card.value == 3 else PlayerMove.STAND
-    elif true_count <= -1:
-        if player_hand.total == 16:
-            return PlayerMove.HIT if dealer_card.value == 10 else PlayerMove.STAND
-        elif player_hand.total == 13:
-            return PlayerMove.HIT if dealer_card.value == 2 else PlayerMove.STAND
-    return None
+    if true_count >= 8 and hand_value == 20 and player_hand.has_pairs and dealer_card == 5:
+        return PlayerMove.SPLIT
+    elif true_count < 8 and hand_value == 20 and player_hand.has_pairs and dealer_card == 5:
+        return PlayerMove.STAND
+
+    if true_count >= 7 and hand_value == 9 and dealer_card == 7 and player_hand.can_double_down:
+        return PlayerMove.DOUBLE
+    elif true_count < 7 and hand_value == 9 and dealer_card == 7:
+        return PlayerMove.HIT
+
+    if true_count >= 7 and hand_value == 12 and dealer_card == 2:
+        return PlayerMove.STAND
+    elif true_count < 7 and hand_value == 12 and dealer_card == 2:
+        return PlayerMove.HIT
+
+    if true_count >= 6 and hand_value == 20 and player_hand.has_pairs and dealer_card == 6:
+        return PlayerMove.SPLIT
+    elif true_count < 6 and hand_value == 20 and player_hand.has_pairs and dealer_card == 6:
+        return PlayerMove.STAND
+
+    if true_count >= 6 and hand_value == 15 and dealer_card == 10:
+        return PlayerMove.STAND
+    elif true_count < 6 and hand_value == 15 and dealer_card == 10:
+        return PlayerMove.HIT
+
+    if true_count >= 5 and hand_value == 10 and dealer_card == 10 and player_hand.can_double_down:
+        return PlayerMove.DOUBLE
+    elif true_count < 5 and hand_value == 10 and dealer_card == 10:
+        return PlayerMove.HIT
+
+    if true_count >= 5 and dealer_card.name == 'A':
+        raise InsuranceException("Player should take insurance")
+
+    if true_count >= 5 and hand_value == 12 and dealer_card == 3:
+        return PlayerMove.STAND
+    elif true_count < 5 and hand_value == 12 and dealer_card == 3:
+        return PlayerMove.HIT
+
+    if true_count >= 4 and hand_value == 10 and dealer_card.name == 'A':
+        return PlayerMove.DOUBLE
+    elif true_count < 4 and hand_value == 10 and dealer_card.name == 'A':
+        return PlayerMove.HIT
+
+    if true_count >= 3 and hand_value == 8 and dealer_card == 6:
+        return PlayerMove.DOUBLE
+    elif true_count < 3 and hand_value == 8 and dealer_card == 6:
+        return PlayerMove.HIT
+
+    if true_count >= 3 and hand_value == 19 and is_soft and dealer_card == 6 and player_hand.can_double_down:
+        return PlayerMove.DOUBLE
+    elif true_count < 3 and hand_value == 19 and is_soft and dealer_card == 6:
+        return PlayerMove.STAND
+
+    if true_count >= 1 and hand_value == 9 and dealer_card == 2 and player_hand.can_double_down:
+        return PlayerMove.DOUBLE
+    elif true_count < 1 and hand_value == 9 and dealer_card == 2:
+        return PlayerMove.HIT
+
+    if true_count >= 1 and hand_value == 12 and dealer_card == 4:
+        return PlayerMove.STAND
+    elif true_count < 1 and hand_value == 12 and dealer_card == 4:
+        return PlayerMove.HIT
+
+    if true_count >= -1 and hand_value == 13 and dealer_card == 2:
+        return PlayerMove.STAND
+    elif true_count < -1 and hand_value == 13 and dealer_card == 2:
+        return PlayerMove.HIT
+
+    if true_count >= -1 and hand_value == 16 and dealer_card == 10:
+        return PlayerMove.STAND
+    elif true_count < -1 and hand_value == 16 and dealer_card == 10:
+        return PlayerMove.HIT
+
+    if true_count >= -2 and hand_value == 12 and dealer_card == 5:
+        return PlayerMove.STAND
+    elif true_count < -2 and hand_value == 12 and dealer_card == 5:
+        return PlayerMove.HIT
+
+    if true_count >= -2 and hand_value == 13 and dealer_card == 3:
+        return PlayerMove.STAND
+    elif true_count < -2 and hand_value == 13 and dealer_card == 3:
+        return PlayerMove.HIT
+
+    if true_count >= -4 and hand_value == 12 and dealer_card == 6:
+        return PlayerMove.STAND
+    elif true_count < -4 and hand_value == 12 and dealer_card == 6:
+        return PlayerMove.HIT
 
 
 def get_player_move(player_hand: Hand, dealer_card: PlayingCard, true_count: float, can_split=False) -> PlayerMove:
