@@ -32,6 +32,8 @@ class PlayingCard:
             return (self.name, self.suit, self.value) == (other.name, other.suit, other.value)
         if isinstance(other, int):
             return self.value == other
+        if isinstance(other, str):
+            return self.name == other
         return False
 
     def __ge__(self, other) -> bool:
@@ -76,9 +78,10 @@ class PlayingCardDeck:
             self.create_card_pack()
         shuffle(self.cards)
 
-    def should_create_new_deck(self) -> bool:
-        total_cards_dealt = (CARD_COUNT_PER_DECK * MAX_DECK_PER_SERIES) - len(self.cards)
-        return total_cards_dealt >= MAX_CARDS_PER_SERIES
+    def should_create_new_deck(self, hands_played: int) -> bool:
+        total_cards_dealt = (CARD_COUNT_PER_DECK *
+                             MAX_DECK_PER_SERIES) - len(self.cards)
+        return total_cards_dealt >= MAX_CARDS_PER_SERIES or (hands_played == MAX_HANDS_BEFORE_SHUFFLE and MAX_HANDS_BEFORE_SHUFFLE > 0)
 
     def deal(self) -> PlayingCard:
         return self.cards.pop(0)
@@ -93,6 +96,9 @@ class Hand:
     def add_cards(self, cards: List[PlayingCard]):
         self.cards.extend(cards)
         return self
+
+    def copy(self) -> 'Hand':
+        return Hand([self.cards[0], self.cards[1]])
 
     def add_card(self, card: PlayingCard):
         self.cards.append(card)
@@ -226,7 +232,8 @@ class Hand:
 
 class Player:
     def __init__(self, name: string):
-        self._id = "player_" + ''.join(choices(string.ascii_lowercase + string.digits, k=15))
+        self._id = "player_" + \
+            ''.join(choices(string.ascii_lowercase + string.digits, k=15))
         self.hands: List[Hand] = [Hand()]
         self.name = name
         self.has_insurance = False
@@ -285,10 +292,15 @@ class Player:
     def blackjack(self) -> bool:
         return len(self.hands) == 1 and self.hand(0).is_blackjack
 
+    @property
+    def card_count(self) -> int:
+        return sum([sum([c.count for c in h.cards]) for h in self.hands])
+
 
 class Dealer(object):
     def __init__(self):
-        self._id = "dealer_" + ''.join(choices(string.ascii_lowercase + string.digits, k=15))
+        self._id = "dealer_" + \
+            ''.join(choices(string.ascii_lowercase + string.digits, k=15))
         self.hand: Hand = Hand()
         self.__deck__ = PlayingCardDeck()
 
@@ -317,8 +329,8 @@ class Dealer(object):
         self.hand.add_cards(cards)
         return self
 
-    def should_create_new_deck(self) -> bool:
-        return self.deck.should_create_new_deck()
+    def should_create_new_deck(self, hands_played: int) -> bool:
+        return self.deck.should_create_new_deck(hands_played=hands_played)
 
     def shuffle(self) -> 'Dealer':
         self.deck.shuffle()
@@ -336,12 +348,17 @@ class Dealer(object):
     def deck(self, value):
         raise ValueError("Cannot set deck: " + str(value))
 
+    def should_shuffle(self, hands_played: int):
+        return self.should_create_new_deck(hands_played=hands_played)
+
     def deal(self, player: Optional[Player] = None, player_hand_id=0) -> int:
         card = self.deck.deal()
         if player:
             player.add_card(card, player_hand_id)
         else:
-            self.add_card(self.deck.deal())
+            if (len(self.hand.cards) == 0):
+                card = PlayingCard('A', Spades, 11)
+            self.add_card(card)
         return card.count
 
     def reset(self):
@@ -371,4 +388,5 @@ class Dealer(object):
         return self.hand.total == 21 and len(self.hand.cards) == 2
 
 
-__all__ = ['Dealer', 'PlayerMove', 'Player', 'Hand', 'PlayingCard', 'PlayingCardDeck']
+__all__ = ['Dealer', 'PlayerMove', 'Player',
+           'Hand', 'PlayingCard', 'PlayingCardDeck']

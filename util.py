@@ -1,6 +1,6 @@
 from enums import PlayerMove
 from models import Hand, PlayingCard
-from typing import Union, List, Optional
+from typing import Union, List
 from errors import InsuranceException
 
 USE_PRETTY_TABLE = True
@@ -142,9 +142,6 @@ def _get_true_count_play(player_hand: Hand, dealer_card: PlayingCard, true_count
         return PlayerMove.DOUBLE
     elif true_count < 5 and hand_value == 10 and dealer_card == 10:
         return PlayerMove.HIT
-
-    if true_count >= 5 and dealer_card.name == 'A':
-        raise InsuranceException("Player should take insurance")
 
     if true_count >= 5 and hand_value == 12 and dealer_card == 3:
         return PlayerMove.STAND
