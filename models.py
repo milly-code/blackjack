@@ -70,6 +70,7 @@ class PlayingCardDeck:
         for data in card_values:
             face, count = data
             for suit in SUITS:
+                print(face, suit, count)
                 self.cards.append(PlayingCard(face, suit, count=count))
 
     def shuffle(self):
@@ -81,12 +82,13 @@ class PlayingCardDeck:
     def should_create_new_deck(self, hands_played: int) -> bool:
         total_cards_dealt = (CARD_COUNT_PER_DECK *
                              MAX_DECK_PER_SERIES) - len(self.cards)
-        return total_cards_dealt >= MAX_CARDS_PER_SERIES or (hands_played == MAX_HANDS_BEFORE_SHUFFLE and MAX_HANDS_BEFORE_SHUFFLE > 0)
+        return total_cards_dealt >= MAX_CARDS_PER_SERIES or (hands_played == MAX_HANDS_BEFORE_SHUFFLE
+                                                             and MAX_HANDS_BEFORE_SHUFFLE > 0)
 
     def deal(self) -> PlayingCard:
         return self.cards.pop(0)
 
-
+# <Hand(cards=[PlayingCard(value=A, suite=♠, count=11), PlayingCard(value=3, suite=♠, count=1)], total=14, count=12)/>
 class Hand:
     def __init__(self, cards: Optional[List[PlayingCard]] = None, is_dealer=True):
         self.cards: List[PlayingCard] = cards or []  # cards
@@ -356,8 +358,6 @@ class Dealer(object):
         if player:
             player.add_card(card, player_hand_id)
         else:
-            if (len(self.hand.cards) == 0):
-                card = PlayingCard('A', Spades, 11)
             self.add_card(card)
         return card.count
 

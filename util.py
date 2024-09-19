@@ -109,7 +109,7 @@ def _get_true_count_play(player_hand: Hand, dealer_card: PlayingCard, true_count
     is_soft = player_hand.has_ace and player_hand.total < 21 and player_hand.has_usable_ace()
 
     if true_count >= 8 and hand_value == 16 and dealer_card == 9:
-        return PlayerMove.STAND
+        return PlayerMove.HIT if is_soft else PlayerMove.STAND
     elif true_count < 8 and hand_value == 16 and dealer_card == 9:
         return PlayerMove.HIT
 
@@ -134,7 +134,7 @@ def _get_true_count_play(player_hand: Hand, dealer_card: PlayingCard, true_count
         return PlayerMove.STAND
 
     if true_count >= 6 and hand_value == 15 and dealer_card == 10:
-        return PlayerMove.STAND
+        return PlayerMove.HIT if is_soft else PlayerMove.STAND
     elif true_count < 6 and hand_value == 15 and dealer_card == 10:
         return PlayerMove.HIT
 
@@ -174,12 +174,12 @@ def _get_true_count_play(player_hand: Hand, dealer_card: PlayingCard, true_count
         return PlayerMove.HIT
 
     if true_count >= -1 and hand_value == 13 and dealer_card == 2:
-        return PlayerMove.STAND
+        return PlayerMove.HIT if is_soft else PlayerMove.STAND
     elif true_count < -1 and hand_value == 13 and dealer_card == 2:
         return PlayerMove.HIT
 
     if true_count >= -1 and hand_value == 16 and dealer_card == 10:
-        return PlayerMove.STAND
+        return PlayerMove.HIT if is_soft else PlayerMove.STAND
     elif true_count < -1 and hand_value == 16 and dealer_card == 10:
         return PlayerMove.HIT
 
@@ -189,7 +189,7 @@ def _get_true_count_play(player_hand: Hand, dealer_card: PlayingCard, true_count
         return PlayerMove.HIT
 
     if true_count >= -2 and hand_value == 13 and dealer_card == 3:
-        return PlayerMove.STAND
+        return PlayerMove.HIT if is_soft else PlayerMove.STAND
     elif true_count < -2 and hand_value == 13 and dealer_card == 3:
         return PlayerMove.HIT
 
