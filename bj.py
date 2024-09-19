@@ -61,8 +61,10 @@ class Blackjack:
             self.reset()
 
     def blackjack_winner(self, p=True):
+        # if dealer has blackjack then player wins +1
+        # if dealer doesn't have blackjack then player loses -0.5
         if self.dealer.blackjack and not self.player.blackjack:
-            points = "-0.5" if self.player.has_insurance else "-1"
+            points = "1" if self.player.has_insurance else "-0.5"
         elif self.player.blackjack and not self.dealer.blackjack:
             points = "1" if self.player.has_insurance else "1.5"
         elif self.dealer.blackjack and self.player.blackjack:
